@@ -1,0 +1,84 @@
+---
+title: "Scripts Exercise 1"
+output: 
+date: "2025-10-02"
+author : "Kemajou"
+
+---
+
+
+# Fertility Intentions and Labor Market Participation in Canada
+
+setwd(dir)
+Upload packages
+
+```{r, warning=FALSE, message=FALSE}
+
+setwd("C:/Users/EG/Desktop/CanD 3/CanD3 Formation/RVM/Exercise 03 oct Donald/Data")
+#install.packages("gtsummary")
+library(readr)
+library(tidyverse)
+library(broom)
+library(dplyr)
+library(gtsummary)
+dta1 <- read_csv("dta1.csv")
+
+```
+
+
+
+#Recodages des variables 
+
+```{r}
+dta1 |> 
+  distinct(FI_105)
+
+dta1 <- dta1 |> 
+  mutate(FI_105 = case_when(between(FI_105, 1, 2) ~ "YES",
+                            between(FI_105, 3, 5) ~ "No",
+                            .default = NA),
+         REW_10 = case_when(REW_10 == 1 ~ "Yes",
+                            REW_10 == 2 ~ "No",
+                            .default = NA),
+         SEX = case_when(SEX == 1 ~ "Male",
+                         SEX == 2 ~ "Female"),
+         AGEGR5 = case_when( AGEGR5 == 1 ~ "15-19",
+                             AGEGR5 == 2 ~ "20-24",
+                             AGEGR5 == 3 ~ "25-29",
+                             AGEGR5 == 4 ~ "30-34",
+                             AGEGR5 == 5 ~ "35-39",
+                             AGEGR5 == 6 ~ "40-44",
+                             AGEGR5 == 7 ~ "45-49",
+                             AGEGR5 == 8 ~ "50-54",
+                             between(AGEGR5,9, 14) ~ "55+"),
+         MARSTAT = case_when(MARSTAT == 1 | MARSTAT == 2 ~ " married/living common",
+                             MARSTAT == 3 ~ "Widowed",
+                             MARSTAT == 4 | MARSTAT == 5 ~ "Separed/divorced",
+                             MARSTAT == 6 ~ "Single",
+                             .default = NA),
+         CHRINHDC = case_when(CHRINHDC == 0 ~ "No children",
+                              CHRINHDC == 1 ~ "One children",
+                              CHRINHDC == 2 ~ "two children",
+                              between(CHRINHDC, 3, 4) ~ "three +",
+                              .default = NA))  |> 
+  filter(!is.na(FI_105))
+
+dta1 |> 
+  select(FI_105, REW_10,SEX, AGEGR5, MARSTAT, CHRINHDC) |> 
+  tbl_summary()
+```
+
+
+
+#regression model
+
+
+
+```{r, message=FALSE}
+model <- glm(FI_105 ~ REW_10 + SEX + MARSTAT+ CHRINHDC+ AGEGR5 ,
+             data = dta1 |> mutate(FI_105 = if_else(FI_105 == "YES", 1, 0)),
+        family = binomial(link = "logit")) |> gtsummary::tbl_regression(exponentiate = TRUE)
+print(model)
+
+```
+
